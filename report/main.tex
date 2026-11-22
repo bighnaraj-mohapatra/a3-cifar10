@@ -1,0 +1,197 @@
+% CVPR two-column report. Put the official CVPR author-kit files (cvpr.sty, ieeenat_fullname.bst)
+% from https://github.com/cvpr-org/author-kit next to this file (or use the CVPR template on Overleaf).
+% Without them the file still compiles with a plain two-column layout.
+\documentclass[10pt,twocolumn,letterpaper]{article}
+\IfFileExists{cvpr.sty}{\usepackage[final]{cvpr}}{\usepackage[margin=0.75in]{geometry}}
+\usepackage{graphicx,booktabs,amsmath,amssymb,xcolor,url,adjustbox}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{../figures/}}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\tab}[1]{\IfFileExists{tables/#1.tex}{\input{tables/#1.tex}}{\todo{run make\_tables.py: #1}}}
+\newcommand{\figw}[2]{\begin{figure*}[t]\centering\IfFileExists{../figures/#1}{\includegraphics[width=0.85\textwidth]{#1}}{\todo{figure #1}}\caption{#2}\label{fig:#1}\end{figure*}}
+\newcommand{\fig}[3]{\begin{figure}[t]\centering\IfFileExists{../figures/#1}{\includegraphics[width=#2]{#1}}{\todo{figure #1}}\caption{#3}\label{fig:#1}\end{figure}}
+
+\title{MLPs, CNNs, Autoencoders, SVMs and Clustering on CIFAR10}
+\author{Bighnaraj Mohapatra \quad Roll no.\ M26CSA011\\
+Repository: \url{https://github.com/TODO/a3-cifar10} \quad Final commit: \texttt{TODO-commit-hash}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\todo{Write last, 4--5 sentences, one finding per question, each with its measured number and the
+comparison it comes from. Do not state anything the tables do not show.}
+\end{abstract}
+
+%=====================================================================
+\section{Common setup}
+\label{sec:setup}
+From the 50,000 CIFAR10~\cite{krizhevsky2009cifar} training images we draw one stratified split of 45,000 training and 5,000
+validation images (500 per class) with \texttt{train\_test\_split(stratify=y, random\_state=26011)};
+26011 is the digit sequence of the roll number. The indices are saved in
+\texttt{splits/split\_seed26011.npz} and every experiment loads that file. Validation data are used only
+for model, architecture and hyper-parameter selection. The official test set is evaluated by a separate
+script only after all choices are fixed.
+
+Images are scaled to $[0,1]$ and standardised per channel with statistics of the (transformed) training
+images. No data augmentation is used: random crops and flips encode a spatial prior, which would confound
+the MLP--CNN comparisons of Q1 and Q2 and has no meaning for permuted images. All classifiers are trained
+with AdamW (weight decay $5\cdot10^{-4}$), batch size 128 and a cosine schedule for \todo{60} epochs. The
+learning rate of every compared model is chosen from the same grid $\{3\cdot10^{-4},10^{-3},3\cdot10^{-3}\}$
+by validation accuracy (seed 26011). The checkpoint with the best validation accuracy is kept. Final
+comparisons use seeds 26011--26013 and report mean $\pm$ sample standard deviation. Fairness criteria and
+predictions were committed in \texttt{PREREGISTRATION.md} (commit \todo{hash}) before the final runs.
+\textbf{Reuse.} Components are introduced once and reused: MLP-B and CNN-A (Q1(a)) are the models of
+Q2(a), and CNN-A is the fixed classifier of Q3(b). The Q3(a) autoencoders are the baseline of Q3(b), are
+probed in Q3(c) and provide the Q4 representation (Table~\ref{tab:models} and the README reuse map).
+
+%=====================================================================
+\section{Q1: Why does an MLP struggle on CIFAR10?}
+\subsection{Q1(a): separating the reason from an alternative}
+\textbf{Chosen reason (H1).} The MLP has no spatial inductive bias. It sees an unordered 3,072-vector,
+with neither locality nor weight sharing, so it must learn pixel relations from data and generalises
+poorly even when it can fit the training set. \textbf{Alternative (H2).} The MLP under-fits because of
+too little capacity or poor optimisation. The two hypotheses make different predictions. H2 predicts low
+training accuracy, validation accuracy that rises with width, and large gains from better optimisation
+(BN, tuned LR). H1 predicts high training accuracy with a large train--val gap, validation accuracy that
+saturates as width grows, and a clear gain from a spatial prior at equal parameter count.
+\textbf{Design.} (i) A width sweep MLP-S/B/L/XL (0.41M--4.21M parameters). (ii) An optimisation control,
+MLP-B-plain (no BN, untuned LR). (iii) A prior-injection control, CNN-A, parameter-matched to MLP-B
+(816,202 vs 856,074, within 5\%). All use the protocol of Sec.~\ref{sec:setup}. Compute is not matched
+(Table~\ref{tab:models}); we report it rather than hide it.
+
+\tab{tab_models}
+\tab{tab_q1a}
+\figw{q1a_curves.png}{Q1(a)/Q2(a): training and validation accuracy per epoch (seed 26011).}
+\fig{q1a_width_sweep.png}{0.85\linewidth}{Q1(a): MLP width sweep vs the parameter-matched CNN-A.}
+
+\textbf{Interpretation.} \todo{Use Table~\ref{tab:q1a} and the figures: (1) is MLP-B's training accuracy
+high and its train--val gap large? (2) does validation accuracy saturate with width? (3) how much did BN and
+LR tuning add (MLP-B vs MLP-B-plain)? (4) CNN-A vs MLP-B at matched parameters. Conclude for H1 or H2 only
+as far as these numbers allow.}
+
+\subsection{Q1(b): is structure learned before memorisation?}
+\textbf{Setting.} MLP-Mem (3072--2048--2048--10, 10,510,346 parameters, no BN, no weight decay, no
+dropout) is trained with Adam (constant LR $3\cdot10^{-4}$) for \todo{200} epochs. A fixed 40\% of the
+training labels (seed 26011) is replaced by a label drawn uniformly from the \emph{other} nine classes, so
+fitting a corrupted label is unambiguously memorisation. Validation labels stay clean. Every epoch we
+measure accuracy on the clean-label subset, accuracy on the noisy subset against the assigned (wrong) and
+the true labels, and validation accuracy. Two controls use 0\% and 100\% corrupted labels.
+\textbf{Pre-registered rule.} Let $t^*$ be the epoch of peak validation accuracy. We conclude that
+structure is learned first iff, at $t^*$, the noisy-subset fit to assigned labels is below 20\% and the
+noisy-subset accuracy against true labels is above chance (10\%).
+
+\figw{q1b_memorisation.png}{Q1(b): training trajectory under 40\% label noise (left) and the
+speed of fitting real vs random labels (right).}
+\tab{tab_q1b}
+
+\textbf{Interpretation.} \todo{Apply the rule using Table~\ref{tab:q1b}. Compare the first epochs at which
+the clean and noisy subsets reach 25/50/90\%. Describe what happens to validation and noisy-vs-true accuracy
+after $t^*$. Report test accuracy at $t^*$ vs the final epoch.}
+
+%=====================================================================
+\section{Q2: What does the CNN use?}
+\subsection{Q2(a): a fair comparison and a proposed reason}
+We reuse MLP-B and CNN-A from Q1(a). The fairness criterion was fixed before the final results
+(\texttt{PREREGISTRATION.md}): parameters within $\pm10\%$, identical data, preprocessing, optimiser,
+epochs, LR grid and checkpoint rule, no augmentation, and three seeds. \textbf{Proposed reason:} CNN-A's
+advantage comes from \emph{locality and weight sharing}. Its small filters apply the same local detectors
+at every position and so exploit correlations between neighbouring pixels. \todo{Support with the
+train--val gaps and per-class accuracies from Q1(a).}
+
+\subsection{Q2(b): same pixel values, disturbed spatial structure}
+We apply one fixed random permutation of the 1,024 pixel positions (\texttt{default\_rng(26011)}),
+identical for all channels and for every training, validation and test image, and retrain both models
+with the same hyper-parameters. \textbf{Prediction stated beforehand.} MLP-B is unchanged within seed
+noise: a fixed input permutation is equivalent to permuting its first-layer weights, whose i.i.d.\
+initialisation is permutation-invariant. CNN-A drops substantially. If its advantage disappears, the
+locality explanation of Q2(a) is supported. If it stays clearly ahead, it is not.
+
+\tab{tab_q2}
+
+\subsection{Q2(c): colour statistics or luminance structure?}
+\textbf{Explanations.} E1: CNN-A relies mainly on colour statistics. E2: it relies mainly on luminance
+spatial structure. \textbf{Experiment.} Both models are retrained and tested on grayscale images
+($Y=0.299R+0.587G+0.114B$, replicated to three channels, so architecture and parameters are unchanged).
+As a separately labelled diagnostic, the RGB-trained models are also evaluated on grayscale test images.
+\textbf{Errors and confidence} (test set): per-class accuracy changes, new confusions, mean max-softmax for
+correct and incorrect predictions, ECE with 15 bins~\cite{guo2017calibration}, and the share of errors made
+with confidence $>0.9$ (\texttt{results/q2c\_confidence.json}).
+
+\fig{q2c_reliability.png}{0.8\linewidth}{Q2(c): reliability diagrams for CNN-A (test set).}
+
+\textbf{Conclusion linking (a)--(c).} \todo{3--4 sentences: the reason proposed in (a); whether the
+permutation result in (b) supports it, with the numbers; what (c) says about colour vs spatial structure.}
+
+%=====================================================================
+\section{Q3: Autoencoders}
+\subsection{Q3(a): bottleneck capacity}
+The three fully convolutional AEs share every layer except the final $1\times1$ encoder and first
+$1\times1$ decoder convolutions. The bottleneck is $z\in\mathbb{R}^{c\times4\times4}$ with
+$c\in\{2,16,128\}$, i.e.\ $d\in\{32,256,2048\}$ (compression $96\times$, $12\times$, $1.5\times$). Training
+is identical: per-pixel MSE on $[0,1]$, Adam with LR $10^{-3}$, cosine schedule, \todo{50} epochs, batch
+128, and the checkpoint with the lowest validation MSE. Selection uses validation MSE only.
+\tab{tab_q3a}
+\textbf{Choice.} \todo{Name the selected $d$, justify it with validation MSE and the train/val gap
+(Fig.~\ref{fig:q3a_mse_curves.png}), and give its test MSE.}
+\fig{q3a_mse_curves.png}{0.85\linewidth}{Q3(a): reconstruction MSE per epoch.}
+
+\subsection{Q3(b): denoising}
+\textbf{Corruption.} Additive Gaussian noise, $\sigma=0.2$ on $[0,1]$, clipped. It is a corruption a
+reconstruction model can plausibly undo, because i.i.d.\ noise lies off the image
+manifold~\cite{vincent2008denoising}. $\sigma$ was fixed in advance. A validation scan
+(\texttt{results/q3b\_sigma\_scan\_val.json}) confirms that it hurts the classifier. \textbf{Protocol.}
+The DAE has the same architecture as the selected clean AE and is trained on noisy inputs with clean
+targets, without labels. Fresh noise is drawn each batch. Validation and test use fixed seeded noise.
+The fixed classifier is the clean CNN-A (Q2(a), seed 26011). AE(clean) is a control for accuracy lost to
+reconstruction blur alone.
+\tab{tab_q3b}
+\figw{q3b_examples.png}{Q3(b): test images: clean, noisy, AE(noisy), DAE(noisy).}
+\textbf{Decision.} \todo{Compare DAE(noisy) with noisy (did it help?) and with AE(clean) and clean (how much
+of the recoverable accuracy is recovered?); use the agreement column and the per-class results.}
+
+\subsection{Q3(c): class information vs reconstruction}
+Encoders are frozen. For each representation (the three AEs, the DAE, an untrained encoder of the selected
+architecture, and raw pixels) we fit a multinomial logistic-regression probe (L2 strength chosen on
+validation) and a kNN probe ($k$ chosen on validation) on the 45k training features, then report test
+accuracy. Probes after PCA to 32 dimensions control for the different dimensionalities.
+\tab{tab_q3c}
+\textbf{Do the two quantities agree?} \todo{Compare the ranking by test MSE with the ranking by probe
+accuracy. With four trained models, describe the pattern rather than claim a correlation.}
+
+%=====================================================================
+\section{Q4 (bonus): SVMs and clustering}
+\textbf{Fixed representation.} The $d=256$ bottleneck of the Q3(a) AE, standardised. It was learned
+without labels, so training-set features carry no label memorisation. \textbf{Fixed subset.} 10,000
+training images (1,000 per class, seed 26011), chosen before any model selection and used for every SVM
+and clustering fit. Validation uses the full 5k and test the full 10k.
+
+\subsection{Q4(a): $C$ and kernel}
+Kernels: linear, RBF and polynomial (degree 3, $c_0=1$), with $C\in\{0.01,0.1,1,10,100\}$ and $\gamma$
+fixed at the numeric value of \texttt{'scale'}. Selection uses validation accuracy only; the selected SVM is
+evaluated once on test.
+\tab{tab_q4a}
+\figw{q4a_sweep.png}{Q4(a): validation/training accuracy and support-vector fraction vs $C$.}
+\textbf{Under- and over-fitting.} \todo{Use the train--val gap and the SV fraction across $C$, per kernel.}
+
+\subsection{Q4(b): difficult pairs}
+The three pairs with the largest symmetric test confusion are analysed with the pairwise SVM (same kernel,
+$C$ and numeric $\gamma$; exactly the one-vs-one classifier of the selected SVM).
+\tab{fig_q4b}
+\todo{For each pair: share of test errors inside the margin band $|f|<1$ vs confident errors, bounded vs
+free SVs, and the Fisher ratio from \texttt{results/q4b\_pairs.json}; relate them to the images.}
+
+\subsection{Q4(c): clustering vs classification}
+$k$-means and diagonal GMMs with $k\in\{5,8,10,12,15,20\}$ are fitted on the subset without labels. The
+method and $k$ are chosen by validation silhouette. Test representations are assigned without labels, and
+labels are used only to evaluate.
+\tab{tab_q4c}
+\fig{q4c_pairs.png}{0.8\linewidth}{Q4(c): per class pair, SVM confusion rate vs clustering ARI (test).}
+\textbf{Disagreement.} \todo{Name one class or pair where the SVM and the clustering disagree, quoting the
+SVM pair confusion rate and the cluster pair ARI from \texttt{results/q4c\_pairs\_test.csv}.}
+
+{\small
+\IfFileExists{ieeenat_fullname.bst}{\bibliographystyle{ieeenat_fullname}}{\bibliographystyle{plain}}
+\bibliography{references}
+}
+\end{document}

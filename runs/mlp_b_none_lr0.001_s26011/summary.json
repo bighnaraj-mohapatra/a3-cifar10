@@ -1,0 +1,17 @@
+{
+  "tag": "mlp_b_none_lr0.001_s26011",
+  "best_epoch": 11,
+  "best_val_acc": 0.5587999820709229,
+  "final": {
+    "epoch": 60,
+    "lr": 0.0,
+    "train_loss": 0.00454828143119812,
+    "train_acc": 1.0,
+    "val_loss": 2.87994647026062,
+    "val_acc": 0.5360000133514404,
+    "time_s": 31.9
+  },
+  "params": 856074,
+  "macs": 854528,
+  "wall_s": 31.9
+}
