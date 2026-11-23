@@ -1,0 +1,13 @@
+{
+  "tag": "mlp_xl_none_lr0.001_s26011",
+  "model": "mlp_xl",
+  "train_transform": "none",
+  "test_transform": "none",
+  "ckpt": "best",
+  "seed": 26011,
+  "lr": 0.001,
+  "noise": 0.0,
+  "params": 4210698,
+  "test_acc": 0.5778,
+  "n_test": 10000
+}

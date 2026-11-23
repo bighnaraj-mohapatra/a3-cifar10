@@ -1,0 +1,14 @@
+{
+  "c": 2,
+  "denoise": false,
+  "sigma": 0.2,
+  "epochs": 50,
+  "lr": 0.001,
+  "bs": 128,
+  "seed": 26011,
+  "tag": "ae_c2_s26011",
+  "params": 2669701,
+  "d": 32,
+  "device": "cuda",
+  "torch": "2.15.0+cu132"
+}

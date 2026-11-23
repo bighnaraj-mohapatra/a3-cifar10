@@ -1,0 +1,14 @@
+{
+  "c": 128,
+  "denoise": true,
+  "sigma": 0.2,
+  "epochs": 50,
+  "lr": 0.001,
+  "bs": 128,
+  "seed": 26011,
+  "tag": "dae_c128_sigma0.2_s26011",
+  "params": 2734339,
+  "d": 2048,
+  "device": "cuda",
+  "torch": "2.15.0+cu132"
+}

@@ -1,0 +1,17 @@
+{
+  "tag": "cnn_a_gray_lr0.003_s26012",
+  "best_epoch": 49,
+  "best_val_acc": 0.8596000075340271,
+  "final": {
+    "epoch": 60,
+    "lr": 0.0,
+    "train_loss": 7.605669452459551e-06,
+    "train_acc": 1.0,
+    "val_loss": 0.9194343686103821,
+    "val_acc": 0.8592000007629395,
+    "time_s": 124.4
+  },
+  "params": 816202,
+  "macs": 131532672,
+  "wall_s": 124.4
+}

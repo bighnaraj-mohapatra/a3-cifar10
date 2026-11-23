@@ -1,0 +1,13 @@
+{
+  "tag": "mlp_mem_none_lr0.0003_s26011_noise0.4",
+  "model": "mlp_mem",
+  "train_transform": "none",
+  "test_transform": "none",
+  "ckpt": "last",
+  "seed": 26011,
+  "lr": 0.0003,
+  "noise": 0.4,
+  "params": 10510346,
+  "test_acc": 0.3522,
+  "n_test": 10000
+}

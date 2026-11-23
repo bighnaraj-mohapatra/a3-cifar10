@@ -1,0 +1,22 @@
+{
+  "tag": "mlp_mem_none_lr0.0003_s26011_noise1",
+  "best_epoch": 199,
+  "best_val_acc": 0.0681999996304512,
+  "final": {
+    "epoch": 200,
+    "lr": 0.0003,
+    "train_loss": 0.0761958658695221,
+    "train_acc": 0.9767333269119263,
+    "val_loss": 26.33785057067871,
+    "val_acc": 0.06159999966621399,
+    "time_s": 81.8,
+    "clean_fit_acc": NaN,
+    "noisy_fit_acc": 0.9767333269119263,
+    "noisy_true_acc": 0.0017333333380520344,
+    "clean_loss": NaN,
+    "noisy_loss": 0.0761958658695221
+  },
+  "params": 10510346,
+  "macs": 10506240,
+  "wall_s": 81.8
+}
