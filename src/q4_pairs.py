@@ -100,8 +100,8 @@ def main():
 
     # LaTeX snippet with the pair figures, included by report/main.tex
     from common import ROOT
-    imgs = "\n".join(f"\\includegraphics[width=0.9\\textwidth]{{q4b_pair_{i}_{j}.png}}\\\\" for _, i, j in pairs)
-    snippet = ("\\begin{figure*}[t]\\centering\n" + imgs + "\n\\caption{Q4(b): for each difficult pair, top: "
+    imgs = "\n".join(f"\\includegraphics[width=0.72\\textwidth]{{q4b_pair_{i}_{j}.png}}\\\\" for _, i, j in pairs)
+    snippet = ("\\begin{figure*}[!tbp]\\centering\n" + imgs + "\n\\caption{Q4(b): for each difficult pair, top: "
                "training support vectors (B bounded $\\alpha=C$, F free $0<\\alpha<C$); bottom: test images "
                "nearest the pairwise decision boundary, with decision scores $f$.}\\label{fig:q4b}\\end{figure*}\n")
     (ROOT / "report" / "tables").mkdir(parents=True, exist_ok=True)

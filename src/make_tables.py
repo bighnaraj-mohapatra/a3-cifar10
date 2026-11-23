@@ -60,7 +60,7 @@ def write(name, body, cols, caption, label, wide=False):
     """wide=True -> table* spanning both columns; tables are shrunk (never enlarged) to fit."""
     TAB.mkdir(parents=True, exist_ok=True)
     env, width = ("table*", "\\textwidth") if wide else ("table", "\\columnwidth")
-    tex = (f"\\begin{{{env}}}[t]\\centering\\footnotesize\\setlength{{\\tabcolsep}}{{3pt}}\n"
+    tex = (f"\\begin{{{env}}}[!tbp]\\centering\\footnotesize\\setlength{{\\tabcolsep}}{{3pt}}\n"
            f"\\begin{{adjustbox}}{{max width={width}}}\n"
            f"\\begin{{tabular}}{{{cols}}}\\toprule\n{body}\\bottomrule\\end{{tabular}}\n\\end{{adjustbox}}\n"
            f"\\caption{{{caption}}}\\label{{{label}}}\\end{{{env}}}\n")
@@ -199,7 +199,7 @@ def tab_q4c():
     body = "".join(f"{i} & " + " & ".join(str(v) for v in row) + " \\\\\n" for i, row in ct.iterrows())
     write("tab_q4c", head + body, "l" + "r" * len(ct.columns),
           f"Q4(c): test class $\\times$ cluster contingency ({r['method']}, $k={r['k']}$, chosen by validation "
-          f"silhouette). Test ARI={r['test_ARI']:.4f}, NMI={r['test_NMI']:.4f}.", "tab:q4c", wide=True)
+          f"silhouette). Test ARI={r['test_ARI']:.4f}, NMI={r['test_NMI']:.4f}.", "tab:q4c")
 
 
 if __name__ == "__main__":
